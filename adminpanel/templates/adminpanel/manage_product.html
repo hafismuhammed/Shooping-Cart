@@ -1,0 +1,120 @@
+{% extends 'adminpanel/commen/admin_main.html' %}
+
+{% block header %}
+{% include 'adminpanel/commen/adminheader.html' %}
+{% endblock %}
+
+{% block sidenav %}
+{% include 'adminpanel/commen/adminsidenav.html' %}
+{% endblock %}
+
+{% block content %}
+<section class="wrapper">
+    <div class="row">
+        <div class="col-md-12">
+          <section class="panel">
+            <header class="panel-heading no-border">
+              <h1 style="font-weight: 700;">Manage Products
+                <a class="btn btn-success btn pull-right" href="{% url 'add-products' %}" title="Click to create a product">Create</a>
+              </h1>
+            </header>
+            {% if products %}
+            <table class="table table-bordered table-hover">
+              <thead>
+                <tr>
+                  <th>Product Name</th>
+                  <th>Price</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                  <th>Edit</th>
+                  <th>View</th>
+                  <th>Delete</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for product in products %}
+                <tr>
+                    <td>{{ product.product_name }}</td>
+                    <td>{{ product.price }}</td>
+                    <td>
+                      {% if product.is_active %}
+                      <strong id="statustext{{product.id}}" class="text-success">Active</strong>
+                      {% else %}
+                      <strong id="statustext{{product.id}}" class="text-danger">Inactive</strong>
+                      {% endif %}
+                    </td>
+                    <td>
+                    {% if product.is_active %}
+                      <a id="statusbtn{{product.id}}"  prod_id ="{{product.id}}" class="disablebtn btn btn-sm btn-danger">Disable</a>
+                    {% else %}
+                      <a id="statusbtn{{product.id}}" href="" prod_id ="{{product.id}}" class="enablebtn btn btn-sm btn-success">Enable</a>
+                    {% endif %}
+                    </td>
+                    <td><a href="" class="edit btn btn-sm btn-warning">Edit</a></td>
+                    <td><a target="_blank" href="" class="view btn btn-sm btn-primary">View</a></td>
+                    <td><a data-toggle="modal" data-target="#myModal3" prod_id ="{{product.id}}" href="" class="deleteproduct btn btn-sm btn-danger">Delete</a></td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            {% else %}
+            <div class="alert alert-block alert-danger fade in">
+              <h4 class="text-center">There are no product</h4>
+            </div>
+            {% endif %}
+          </section>
+        </div>
+    </div>
+</section>
+
+{% block script %}
+<script type="text/javascript">
+
+$(document).on('click', 'disablebtn', function(e){
+  e.preventDefeault();
+  var prod_id = $(this).attr('prod_id');
+  $.ajax(
+    {
+      type: "POST",
+      url: "{% url 'change-status' %}",
+      dataType: "json",
+      data: { action: "enable", product: product_id },
+      success: function(data) {
+        $("statustext" + prod_id).text("Inactive");
+        $("#statustext" + prod_id).toggleClass("text-success text-danger");
+        $("#statusbtn" + prod_id).toggleClass("disablebtn enablebtn");
+        $("#statusbtn" + prod_id).toggleClass("btn-danger btn-success");
+        $("#statusbtn" + prod_id).text('Enable');
+      },
+      error: function() {
+        alert("server error");
+      }
+    }
+  );
+});
+
+$(document).on('click', 'enablebtn', function(e){
+  e.preventDefault();
+  var prod_id = $(this).attr('prod_id');
+  $.ajax({
+    type: "POST",
+    url: "{% url 'change-status' %}",
+    dataType: JSON,
+    data: { action: 'enable', product: prod_id },
+    success: function(data) {
+      $("statustext" + prod_id).text("Active");
+      $("#statustext" + prod_id).toggleClass("text-danger text-success");
+      $("#statusbtn" + prod_id).toggleClass("enablebtn disablebtn");
+      $("#statusbtn" + prod_id).toggleClass("btn-success btn-danger");
+      $("#statusbtn" + prod_id).text('Disable');
+      },
+      error: function() {
+        alert("server error");
+      }
+  });
+});
+
+</script>
+{% endblock %}
+
+{% endblock %}
