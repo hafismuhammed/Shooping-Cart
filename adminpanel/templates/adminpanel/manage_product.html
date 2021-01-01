@@ -45,12 +45,12 @@
                     </td>
                     <td>
                     {% if product.is_active %}
-                      <a id="statusbtn{{product.id}}"  prod_id ="{{product.id}}" class="disablebtn btn btn-sm btn-danger">Disable</a>
+                      <a id="statusbtn{{product.id}}" href=""  prod_id ="{{product.id}}" class="disablebtn btn btn-sm btn-danger">Disable</a>
                     {% else %}
-                      <a id="statusbtn{{product.id}}" href="" prod_id ="{{product.id}}" class="enablebtn btn btn-sm btn-success">Enable</a>
+                      <a id="statusbtn{{product.id}}" href=""  prod_id ="{{product.id}}" class="enablebtn btn btn-sm btn-success">Enable</a>
                     {% endif %}
                     </td>
-                    <td><a href="" class="edit btn btn-sm btn-warning">Edit</a></td>
+                    <td><a href="{% url 'edit-products' product.id %}" class="edit btn btn-sm btn-warning">Edit</a></td>
                     <td><a target="_blank" href="" class="view btn btn-sm btn-primary">View</a></td>
                     <td><a data-toggle="modal" data-target="#myModal3" prod_id ="{{product.id}}" href="" class="deleteproduct btn btn-sm btn-danger">Delete</a></td>
                 </tr>
@@ -65,12 +65,32 @@
           </section>
         </div>
     </div>
+
+    <div class="modal fade stick-up" id="myModal3" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+            <h4 class="modal-title">Delete Confirmation</h4>
+          </div>
+          <div class="modal-body">
+    
+            Are you sure you want to delete this product if deleted this data will no longer be available.
+    
+          </div>
+          <div class="modal-footer">
+            <a href="" class="btn btn-danger btn-cons  pull-left inline btn-sm" id="delete-product-button" delete-product-id="">Delete</a>
+            <button data-dismiss="modal" class="btn btn-info btn-cons no-margin pull-right inline btn-sm" type="button">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
 </section>
 
 {% block script %}
 <script type="text/javascript">
 
-$(document).on('click', 'disablebtn', function(e){
+$(document).on('click', '.disablebtn', function(e){
   e.preventDefeault();
   var prod_id = $(this).attr('prod_id');
   $.ajax(
@@ -93,7 +113,7 @@ $(document).on('click', 'disablebtn', function(e){
   );
 });
 
-$(document).on('click', 'enablebtn', function(e){
+$(document).on('click', '.enablebtn', function(e){
   e.preventDefault();
   var prod_id = $(this).attr('prod_id');
   $.ajax({
@@ -113,6 +133,8 @@ $(document).on('click', 'enablebtn', function(e){
       }
   });
 });
+
+  
 
 </script>
 {% endblock %}

@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, JsonResponse
 from django.urls import reverse, reverse_lazy
 from django.contrib.auth import authenticate, login, logout
@@ -54,6 +54,7 @@ def manage_products(request):
 
 @user_passes_test(checksuperuser, login_url = reverse_lazy('login'))
 def add_products(request):
+    title = 'Add'
     if request.method == 'POST':
         product_form = ProductForm(request.POST, request.FILES)
         if product_form.is_valid():
@@ -70,7 +71,7 @@ def add_products(request):
             return render(request, 'adminpanel/add_product.html', {'form': product_form})
     else:
         product_form = ProductForm()
-        return render(request, 'adminpanel/add_product.html', {'form': product_form})
+    return render(request, 'adminpanel/add_product.html', {'form': product_form, 'title': title})
 
 
 @csrf_exempt
@@ -89,5 +90,37 @@ def chage_status(request):
         return JsonResponse({'result': 'success'})
 
 
+@user_passes_test(checksuperuser, login_url=reverse_lazy('login'))
+def edit_products(request, product_id):
+    title = 'Edit'
+    if request.method == 'POST':
+        product_form = ProductForm(request.POST, request.FILES)
+        if product_form.is_valid():
+            
+            product_object = Product.objects.get(id=product_id)
+            product_object.product_name = product_form.cleaned_data['product_name']
+            product_object.product_discription = product_form.cleaned_data['product_discription']
+            product_object.price = product_form.cleaned_data['price']
+            if request.FILES:
+                product_object.product_picture = request.FILES['product_image']
+            product_object.save()
+            return redirect(reverse('manage-products'))
+        else:
+            product_form = ProductForm(request.POST, request.FILES)
+            return render(request, 'adminpanel/add_product.html', {'form': product_form})
+    else:
+        product_object = Product.objects.get(id=product_id)
+        product_form = ProductForm(initial={
+            'product_name': product_object.product_name,
+            'product_discription': product_object.product_discription,
+            'price': product_object.price,
+            'product_image': product_object.product_picture
+        })
+    return render(request, 'adminpanel/add_product.html', {'form': product_form, 'title': title, 'current_image': product_object.product_picture})
 
 
+@user_passes_test(checksuperuser, login_url = reverse_lazy('login'))
+def delete_product(request, product_id):
+    product = get_object_or_404(Product, id=product_id)
+    product.delete()
+    return redirect(reverse('manage-products'))
