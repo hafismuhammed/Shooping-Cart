@@ -45,14 +45,14 @@
                     </td>
                     <td>
                     {% if product.is_active %}
-                      <a id="statusbtn{{product.id}}" href=""  prod_id ="{{product.id}}" class="disablebtn btn btn-sm btn-danger">Disable</a>
+                      <a id="statusbtn{{product.id}}"   prod_id ="{{product.id}}" class="disablebtn btn btn-sm btn-danger">Disable</a>
                     {% else %}
-                      <a id="statusbtn{{product.id}}" href=""  prod_id ="{{product.id}}" class="enablebtn btn btn-sm btn-success">Enable</a>
+                      <a id="statusbtn{{product.id}}"  prod_id ="{{product.id}}" class="enablebtn btn btn-sm btn-success">Enable</a>
                     {% endif %}
                     </td>
                     <td><a href="{% url 'edit-products' product.id %}" class="edit btn btn-sm btn-warning">Edit</a></td>
                     <td><a target="_blank" href="" class="view btn btn-sm btn-primary">View</a></td>
-                    <td><a data-toggle="modal" data-target="#myModal3" prod_id ="{{product.id}}" href="" class="deleteproduct btn btn-sm btn-danger">Delete</a></td>
+                    <td><a data-toggle="modal" data-target="#myModal3" prod_id ="{{product.id}}"  class="deleteproduct btn btn-sm btn-danger">Delete</a></td>
                 </tr>
                 {% endfor %}
               </tbody>
@@ -88,23 +88,25 @@
 </section>
 
 {% block script %}
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 <script type="text/javascript">
 
 $(document).on('click', '.disablebtn', function(e){
-  e.preventDefeault();
+  e.preventDefault();
   var prod_id = $(this).attr('prod_id');
   $.ajax(
     {
       type: "POST",
       url: "{% url 'change-status' %}",
       dataType: "json",
-      data: { action: "enable", product: product_id },
+      data: { action: "disable", product: prod_id },
       success: function(data) {
-        $("statustext" + prod_id).text("Inactive");
+        $("#statustext" + prod_id).text("Inactive");
         $("#statustext" + prod_id).toggleClass("text-success text-danger");
         $("#statusbtn" + prod_id).toggleClass("disablebtn enablebtn");
         $("#statusbtn" + prod_id).toggleClass("btn-danger btn-success");
         $("#statusbtn" + prod_id).text('Enable');
+        alert(data);
       },
       error: function() {
         alert("server error");
@@ -122,17 +124,25 @@ $(document).on('click', '.enablebtn', function(e){
     dataType: JSON,
     data: { action: 'enable', product: prod_id },
     success: function(data) {
-      $("statustext" + prod_id).text("Active");
+      $("#statustext" + prod_id).text("Active");
       $("#statustext" + prod_id).toggleClass("text-danger text-success");
       $("#statusbtn" + prod_id).toggleClass("enablebtn disablebtn");
       $("#statusbtn" + prod_id).toggleClass("btn-success btn-danger");
       $("#statusbtn" + prod_id).text('Disable');
+      alert(data);
       },
       error: function() {
         alert("server error");
       }
   });
 });
+
+
+  $(document).on('click','.deleteproduct',function(){
+    var product_id = $(this).attr("prod_id");
+    deleteurl = "{%url 'delete-product' product_id=12345 %}".replace(/12345/,product_id);
+    $("#delete-product-button").attr("href", deleteurl);
+  })
 
   
 

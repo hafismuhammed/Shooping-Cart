@@ -81,7 +81,7 @@ def chage_status(request):
         product_id = int(request.POST['product'])
         action = request.POST['action']
         product_object = Product.objects.get(id=product_id)
-        if action == 'disabled':
+        if action == 'disable':
             product_object.is_active = False
         else:
             product_object.is_active = True
@@ -124,3 +124,4 @@ def delete_product(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     product.delete()
     return redirect(reverse('manage-products'))
+
