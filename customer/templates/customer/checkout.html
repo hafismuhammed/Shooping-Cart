@@ -1,0 +1,94 @@
+{% extends "customer/commen/customer_main.html" %}
+
+{% block searchbar %}
+{% endblock %}
+
+{% block maincontent %}
+<div class="col-12">
+    <!-- Main Content -->
+    <div class="row">
+        <div class="col-12 mt-3 text-center text-uppercase">
+            <h2>Payment</h2>
+        </div>
+    </div>
+
+    <main class="row">
+        <div class="col-12 bg-white py-3 mb-3">
+            <div class="row">
+                <div class="col-lg-6 col-md-8 col-sm-10 mx-auto table-responsive text-center">
+                    <h3 class="text-info text-center">Click the pay button to initiate payment</h3>
+                    <h4 class="text-center">Total amount to be paid: <span class="text-danger">{{amount}}</span></h4>
+                    <button class="btn btn-sm btn-info mx-auto px-5" id="rzp-button1">Pay</button>
+
+                </div>
+            </div>
+        </div>
+
+    </main>
+    <!-- Main Content -->
+</div>
+{% endblock maincontent %}
+{% block scripts %}
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+var options = {
+    "key": "rzp_test_8ByHObWr7wXRoA", // Enter the Key ID generated from the Dashboard
+    "amount": "{{ amount }}", // Amount is in currency subunits. Default currency is INR. Hence, 50000 refers to 50000 paise
+    "currency": "{{ currency }}",
+    "name": "{{ companyname }}",
+    "order_id": "{{ order_id }}", //This is a sample Order ID. Pass the `id` obtained in the response of Step 1
+    "handler": function (response){
+        alert(response.razorpay_payment_id);
+        console.log(response)
+        sentPaymentInfo(response)
+    },
+    "prefill": {
+        "name": "{{ username }}",
+        "email": "{{ useremail }}",
+        "contact": "{{ phonenum }}"
+    },
+    "notes": {},
+    "theme": {
+        "color": "#3399cc"
+    }
+};
+var rzp1 = new Razorpay(options);
+// rzp1.on('payment.failed', function (response){
+//         alert(response.error.code);
+//         alert(response.error.description);
+//         alert(response.error.source);
+//         alert(response.error.step);
+//         alert(response.error.reason);
+//         alert(response.error.metadata.order_id);
+//         alert(response.error.metadata.payment_id);
+// });
+document.getElementById('rzp-button1').onclick = function(e){
+    rzp1.open();
+    console.log("{{ order_id }}")
+    e.preventDefault();
+}
+function sentPaymentInfo(res) {
+    $.ajax(
+        {
+            type: "POST",
+            url: "",
+            dataType: json,
+            data: {
+                order_id: res.razorpay_order_id,
+                payment_id: res.razorpay_payment_id,
+                payment_signature: res.razorpay_payment_signature,
+            },
+            success: function(data) {
+                alert('payment success');
+                window.location.replace("{% url 'products' %}");
+            },
+            error: function() {
+                alert("server error")
+            }
+        }
+    );
+}
+</script>
+
+{% endblock %}
+{% endblock %}

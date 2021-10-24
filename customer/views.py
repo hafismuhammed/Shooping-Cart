@@ -5,10 +5,10 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
-from customer.forms import RegisterForm, LoginForm
+from customer.forms import RegisterForm, LoginForm, CheckoutForm
 from adminpanel.models import Product
-from customer.models import CusetomerCart
-
+from customer.models import CusetomerCart, Checkout, CustomerPayedProduct
+import razorpay
 
 def home(request):
     products = Product.objects.filter(is_active=True)
@@ -33,19 +33,19 @@ def register_customer(request):
             password = register_form.cleaned_data['password']
 
             if User.objects.filter(username=username).exists():
-                register_form(request.POST)
+                register_form = RegisterForm(request.POST)
                 context = {
                     'form': register_form,
                     'error': 'Username alredy exist add new one'
                 }
-                return render(request, 'customer/custemer_register.html', context)
+                return render(request, 'customer/customer_register.html', context)
             elif User.objects.filter(email=email).exists():
                 register_form(request.POST)
                 context = {
                     'form': register_form,
                     'error': 'email alredy exist add new one'
                 }
-                return render(request, 'customer/custemer_register.html', context)
+                return render(request, 'customer/customer_register.html', context)
             else:
                 user = User.objects.create_user(
                     first_name = first_name,
@@ -65,6 +65,7 @@ def register_customer(request):
         register_form = RegisterForm()
         context = { 'form': register_form }
         return render(request, 'customer/customer_register.html', context)
+
 
 def login_customer(request):
     if request.method == 'POST':
@@ -127,5 +128,97 @@ def remove_from_cart(request):
         cart_object.delete()
         return JsonResponse({ 'result': 'product removed from cart' })
 
+@login_required(login_url = reverse_lazy('login-customer'))
+def view_cart(request):
+    cart = CusetomerCart.objects.filter(customer=request.user).select_related('product')
+    total_price = sum(item.product.price for item in cart)
+    checkout_form = CheckoutForm()
+    context = {
+        'cart': cart,
+        'total_price': total_price,
+        'form': checkout_form
+    }
+    return render(request, 'customer/customer_cart.html', context)
 
-    
+@login_required(login_url = reverse_lazy('login-customr'))
+def remove_cart_product(request, cart_item_id):
+    user = request.user
+    cart_object = CusetomerCart.objects.get(customer=user, id=cart_item_id)
+    cart_object.delete()
+    return redirect(reverse('view-cart'))    
+
+# checkout and payment gateway 
+@login_required(login_url = reverse_lazy('login-customer'))
+def checkout_customer(request):
+    if request.method == 'POST':
+        user = request.user
+        address = request.POST['address']
+        phone = request.POST['phone']
+        cart = CusetomerCart.objects.filter(customer=user).select_related('product')
+        total_price = sum(item.product.price for item in cart)
+        receipt = str(uuid.uuid(1))
+        client = razorpay.Client(auth=("rzp_test_8ByHObWr7wXRoA", "vbj5N0Om11HrxPOCqiHGwBbz"))
+        DATA = {
+            'amount': total_price * 100,
+            'currency': 'INR',
+            'receipt': 'Shope receipt',
+            'payment_capture': 1,
+            'notes': {}
+        }
+        oreder_details = client.order.create(data=DATA)
+
+        checkout_order_instance = Checkout(
+            customer = user,
+            order_id = oreder_details.get('id'),
+            total_amount = total_price,
+            reciept_num = receipt,
+            delivery_address = address,
+            delivery_phoone = phone
+        )
+        checkout_order_instance.save()
+        checkout = Checkout.objects,get(id=checkout_order_instance.id)
+
+        for item in cart:
+            orderproduct_instance = CustomerPayedProduct(
+                customer = user,
+                product_name = item.product.product_name,
+                price = item.product.price,
+                product_description = item.product.product_discription,
+                checkout_details = checkout
+            )
+            orderproduct_instance.save()
+        context = {
+            'order_id': oreder_details.get('id'),
+            'amount': total_price,
+            'amountscript': total_price * 100,
+            'currency': 'INR',
+            'companyname': 'EcomShope',
+            'username': request.user.first_name + ' ' + request.user.last_name,
+            'usermail': request.user.email,
+            'phonenum': phone,
+            'rzpkey': "rzp_test_8ByHObWr7wXRoA",
+        }
+        return render(request, 'customer/checkout.html', context)
+    else:
+        return redirect(reverse('products'))
+
+@csrf_exempt
+@login_required(login_url = reverse_lazy('login-customer'))
+def mark_payment_success(request):
+    if request.is_ajax():
+        order_id = request.POST['order_id']
+        payment_id = request.POST['payment_id']
+        payment_singnature = request.POST['payment_signature']
+        user = request.user
+
+        cart_order_instance = Checkout.objects.get(order_id=order_id, customer=user)
+        cart_order_instance.payment_singnature = payment_singnature
+        cart_order_instance.payment_id = payment_id
+        cart_order_instance.payment_completed = True
+        cart_order_instance.save()
+        cart_instance = CusetomerCart.objects.filter(customer=user)
+        cart_instance.delete()
+        return JsonResponse({'result': 'success'})
+        
+
+

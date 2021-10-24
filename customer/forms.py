@@ -26,4 +26,13 @@ class LoginForm():
         widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'password'})
     )
 
+class CheckoutForm(forms.Form):
+    phone = forms.CharField(
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Phone'}),
+        max_length=200, required=True
+    )
+    address = forms.CharField(
+        widget=forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Address'}),
+        max_length=2000, required=True
+    )
     
